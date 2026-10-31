@@ -8,7 +8,7 @@
   </p>
 
   <p>
-    <img src="https://img.shields.io/badge/Version-2.1-1f2937?style=flat-square" alt="Version 2.1" />
+    <img src="https://img.shields.io/badge/Version-2.2-1f2937?style=flat-square" alt="Version 2.2" />
     <img src="https://img.shields.io/badge/Manifest-V3-1f2937?style=flat-square" alt="Manifest V3" />
     <img src="https://img.shields.io/badge/Permissions-3-1f2937?style=flat-square" alt="Three permissions" />
     <img src="https://img.shields.io/badge/Storage-Local%20Only-1f2937?style=flat-square" alt="Local Storage" />
@@ -50,7 +50,7 @@ Nothing is sent to a third-party server, no AI key is stored, and no page script
 1. **Keep the meaning of the page.** A question is copied as text a model can reason about: formulas keep their LaTeX source, code keeps its language and indentation, figures keep a link, tables keep their rows, and answer choices keep the order Coursera shows. Screenshots lose all of that.
 2. **Verify every write.** The web client's answer is not proof. Each completion module reads the item back through Coursera's own progress list and reports what it actually knows: done, unverified, failed or left alone.
 3. **Keep a hard boundary around graded work.** Quizzes, exams, graded assignments, peer review and certificate state are never marked, submitted or acknowledged. The one graded button only counts items and writes nothing.
-4. **Stay small and local.** Three permissions, no remote code, no analytics, no third-party hosts, no model keys. Everything the extension knows about your session stays in the page and the panel.
+4. **Stay small and local.** Three permissions, no remote code, no analytics, no model keys, and no server of its own. The only addresses beyond coursera.org that the extension ever touches are two that a signed-in Coursera page already loads by itself: the quiz widget frame and your own profile photo. Everything the extension knows about your session stays in the page and the panel.
 5. **Be one readable tool.** The source ships unminified, so every request, guard and failure state can be reviewed before the extension is loaded.
 
 ## Features
@@ -60,7 +60,7 @@ Nothing is sent to a third-party server, no AI key is stored, and no page script
 - **Auto Copy:** Automatically copies questions to the clipboard when a supported assignment page loads.
 - **Manual Copy:** Copies questions on demand through a button in the side panel.
 - **Structured JSON:** Organizes questions, answer choices, and question types into clean, readable JSON, and opens the copy with two instruction lines that ask the model to answer each question by number only.
-- **Math and Diagrams:** Formulas are copied as their LaTeX source between `$` signs, and pictures are copied as markdown image links that point to the original file, so questions containing equations or figures are not lost. Links keep their address, and a table is copied as one line per row.
+- **Math and Diagrams:** Formulas are copied as their LaTeX source between `$` signs, and pictures are copied as markdown image links that point to the original file, so questions containing equations or figures are not lost. A picture the page gives no description for is named after the file Coursera serves it from, so four figure options copy as four different lines instead of four identical links. Links keep their address, and a table is copied as one line per row.
 - **Code and Answers:** The code a question gives you is copied as a fenced block with its own language and its indentation kept, so a starter file survives the paste as runnable text. Code shown inside the question text is copied with it, and anything you have already typed into an answer box comes along too.
 - **LLM-Friendly Workflow:** Makes extracted text easy to paste into different LLMs or personal note-taking tools, without requiring screenshots.
 - **Widget Quizzes:** Some quizzes show the question on the page and draw the choices inside a small frame that Coursera serves from its own content delivery host, so the page alone holds none of them. The frame is asked for the choices it has rendered and they come back in the order it shows them, with the type taken from the inputs inside it. A question that gets no answer stays without options and carries a `note` saying so instead of a guess.
@@ -78,10 +78,10 @@ Nothing is sent to a third-party server, no AI key is stored, and no page script
 - **Lab Completion:** Marks the items Coursera labels "Lab", the notebook and sandpit exercises, as done from their own button. It scans the progress list first and acts only on the labs not already done; a lab is finished through the same start mutation the lab page's launch button sends and then the same GraphQL mutation that the "Mark as completed" button sends, because Coursera only offers that button once the launch is recorded; one lab at a time, and since that gateway answers 200 even when it refuses the field, the body of the answer is what decides. A lab is read back through the course's progress list before it counts as done, and a locked lab is never opened.
 - **Graded App Check:** Counts the graded app items of the course you are on, the items Coursera labels "Graded App Item", and reports how many are complete. It only reads: nothing is submitted or marked, and no honor code or agreement box is ticked.
 
-### Panel
+### Side Panel
 
 - **Side Panel:** The interface opens in Chrome's side panel on the right and stays open while you move through a course. Chrome 116 or later is required. Every notice is shown in the panel's status line; nothing is drawn on the page. The status line sits on a frosted strip that blurs the panel content behind it. One run owns the panel at a time: every button that writes stays disabled until that run has ended and its reload, if any, has had its turn, and the panel keeps watching the tab the run belongs to even when you switch to another tab. A panel that is closed in the middle of a run picks that run back up when it opens again. A copy that fails reports its own message instead of the wrong-page warning.
-- **Account Card:** Shows the name, email and profile photo of the Coursera account signed in to the current tab, at the top of the side panel under a small "User information" label. The values come from the page's own start-up state, are shown only in the side panel and never stored or sent, and a photo is displayed only when its address is https on Coursera's own image hosts or on the numbered Google image hosts (`lh3` to `lh6.googleusercontent.com`) that Coursera serves the photos of Google-signed accounts from. The card stays visible on every page with a four-state pill: No data when the panel has never read the account, Syncing while it is connecting, Not synced when it keeps the last account it read, and Synced when the read is fresh. A failed read keeps the last account on screen. Its plus/minus button folds the card down to its title, and the folded state is remembered.
+- **Account Card:** Shows the name, email and profile photo of the Coursera account signed in to the current tab, at the top of the side panel under a small "User information" label. The values come from the page's own start-up state, are shown only in the side panel and never stored or sent, and a photo is displayed only when its address is https on one of the hosts Coursera serves profile photos from: coursera.org and its CloudFront distribution, `ctfassets.net`, `coursera-profile-photos.s3.<region>.amazonaws.com`, and the numbered Google image hosts (`lh3` to `lh6.googleusercontent.com`) that the photos of Google-signed accounts come from. An address from anywhere else is dropped and the card falls back to initials. The card stays visible on every page with a four-state pill: No data when the panel has never read the account, Syncing while it is connecting, Not synced when it keeps the last account it read, and Synced when the read is fresh. A failed read keeps the last account on screen. Its plus/minus button folds the card down to its title, and the folded state is remembered.
 - **Learning Progress:** Always shown in the side panel. On the Coursera home page it shows the average progress of every course in progress as one bar with its percentage in a rounded chip on the right, and, once a value has been read, an "In progress" label on the left of the chip in the same style as the course name on the card below. The value is read from the page's own start-up cache, so nothing is requested, stored or sent. On a page that cannot feed it the bar stays empty, the label stays hidden and the percentage chip reads `N/A`; the pill is No data until a value has been read once, and Not synced while the card keeps the last value it read.
 - **Course Progress:** Always shown in the side panel. Inside a course the same card shows that course's name, how many of its items are complete, and one row per item type with the completed and total count under the label Coursera itself shows in the course outline, such as `Reading 10/13`, `Video 8/12` or `Lab 2/3`. The type rows sit under a "Lesson types" heading with a boxed plus/minus control that hides or shows them; it starts open and the folded state is remembered. Each type is tinted by how much of it is done, from red when none is done, through amber halfway, to green when every item of that type is done. The name comes from the page cache, while the item list and the progress list come from two read-only requests to Coursera. An item whose type the outline does not label falls back to the type name itself, so every item is listed and nothing is folded into a made-up bucket. Nothing is stored or written. On a page that cannot feed it the bar stays empty and the percentage chip reads `N/A`; the same four-state pill applies. Every dashboard card has its own plus/minus button that folds it down to its title.
 - **Skip Mode for Standalone Modules:** One setting that only the seven standalone skip modules follow. Step by step, the default, waits a little between items; Instantly sends the same one-at-a-time requests with no pause. Neither mode ever sends two requests at once. The two skip-all buttons carry their own pacing instead.
@@ -92,7 +92,7 @@ Nothing is sent to a third-party server, no AI key is stored, and no page script
 - **Reload Notice:** A card right under the header reminds you to reload the Coursera page and the extension once after a fresh install or update, so the panel can read your account and progress. Its close button hides it for good; a removed and reinstalled extension shows it again.
 - **Orphaned Tab Notice:** When the extension is reloaded or updated, Chrome closes the panel but leaves the page script of a tab that was already open running, and that left-behind script answers nothing, so the dashboard can no longer read that tab. The panel notices it for the one tab it was reading before and shows a warning card with a Reload this tab button. Pressing it reloads only that tab, and the panel reads it back as soon as the tab finishes loading, whether or not Auto info update is on. The card never appears for a tab the panel did not read before, it goes away as soon as the tab answers again, and it is dropped when you switch to another tab or close it. The panel never reloads a page on its own.
 - **Credit Footer:** A display-only card at the bottom of the panel with the maker line, the repository ask and a short greeting. It has no buttons and changes nothing, and all three lines follow the Language setting, so the card is fully English or fully Vietnamese.
-- **No Third-Party Servers:** Nothing leaves Coursera. The copy tool works inside the page, and the video, reading, discussion, practice item, lab and app item completion call Coursera's own API with your own signed-in session, using the user id and the token that the page already holds. The course progress card and the graded app check only read from Coursera; neither writes. The one address beyond coursera.org that the extension is loaded into is `d10o6em2qtnr4q.cloudfront.net`, the host Coursera itself serves the quiz widget frame from; there it only reads the choices that frame has already drawn on your screen and sends nothing to it, which is why Chrome lists that host when you install.
+- **No Third-Party Servers:** Nothing leaves Coursera. The copy tool works inside the page, and the video, reading, discussion, practice item, lab and app item completion call Coursera's own API with your own signed-in session, using the user id and the token that the page already holds. The course progress card and the graded app check only read from Coursera; neither writes. The one address beyond coursera.org that the extension is loaded into is `d10o6em2qtnr4q.cloudfront.net`, the host Coursera itself serves the quiz widget frame from; there it only reads the choices that frame has already drawn on your screen and sends nothing to it, which is why Chrome lists that host when you install. Your profile photo is the second one: Coursera already shows it from a Coursera content host, or from the numbered Google image hosts (`lh3` to `lh6.googleusercontent.com`) when the account signs in with Google. The panel points an image tag at the address the page already holds and sends nothing there, and a photo from any other host is dropped so the card falls back to its initials, or to the plain person mark when the account has no name to take them from.
 
 ## How It Works
 
@@ -115,7 +115,7 @@ Nothing is sent to a third-party server, no AI key is stored, and no page script
 
 The page entry runs on every `https://*.coursera.org/*` page in an isolated world. It reads the signed-in identity from Coursera's own start-up state and compares it with the identity Coursera returns before any write. The user id and CSRF token come from the page's session; no cookie is read and no credential is stored.
 
-Reading a question is a DOM walk, not `innerText`. The walker skips hidden and `aria-hidden` subtrees, reads KaTeX formulas from their `<annotation encoding="application/x-tex">` source, reads MathJax 2 and 3 output from the source script or annotation, turns images into absolute markdown links, reads tables row by row, and reads Monaco or CodeMirror code from the editor's real lines with their indentation. The answer a student has already typed is read separately, so a question and its draft answer never mix.
+Reading a question is a DOM walk, not `innerText`. The walker skips hidden and `aria-hidden` subtrees, reads KaTeX formulas from their `<annotation encoding="application/x-tex">` source, reads MathJax 2 and 3 output from the source script or annotation, turns images into absolute markdown links, names an undescribed picture after the file it is served from, reads tables row by row, and reads Monaco or CodeMirror code from the editor's real lines with their indentation. The buttons of the code widget itself and the notice that explains its editor keys are left out: they describe the tool, not the question. The answer a student has already typed is read separately, so a question and its draft answer never mix.
 
 ### Completing an item
 
@@ -144,7 +144,7 @@ Some quizzes render their choices inside a frame served from `d10o6em2qtnr4q.clo
 6. Open a supported assignment page on Coursera.
 7. After an update, reload the extension in `chrome://extensions/` and reload the Coursera tab once. A tab the panel was already reading shows a Reload this tab button for you to press.
 
-## Using the Panel
+## Using the Side Panel
 
 1. Open a Coursera course or a quiz page.
 2. **Copy:** press "Copy all questions to send AI models", or turn on Auto copy. The clipboard now holds the two instruction lines, a blank line, and the JSON array.
@@ -168,7 +168,7 @@ The three dashboard cards are always visible. Each one carries a state pill and 
 
 ## JSON Output Format
 
-Extracted questions are placed on the clipboard under two instruction lines for the model, a blank line, then one JSON array. The instruction asks for one `questionNumber. answer` line per question, keeps maths in `$...$`, gives code in a fenced block with its language, takes a choice answer as the option position and its text, and treats an image link as unopenable so the alt text is all there is. The two lines are fixed:
+Extracted questions are placed on the clipboard under two instruction lines for the model, a blank line, then one JSON array. The instruction asks for one `questionNumber. answer` line per question, keeps maths in `$...$`, gives code in a fenced block with its language, takes a choice answer as the option position and its text, and treats an image link as unopenable, so what a picture contributes is its label and the address it came from. A picture the page left undescribed is labelled with the name of the file Coursera serves it from, which keeps four figure options four separate choices. The two lines are fixed:
 
 ````text
 Reply only "questionNumber. answer", no explanation. Choice: option position (1-based) + exact text, commas for multiple; numeric/text/essay: content only; code: fenced block under the number, same language; math stays $...$.
@@ -214,7 +214,7 @@ Questions that contain formulas or pictures are copied the same way, with the fo
   {
     "questionNumber": 3,
     "type": "single_answer",
-    "question": "Are the following vectors linearly independent?\n\n$\\mathbf{a} = \\begin{bmatrix} 1 \\\\ 0 \\\\ 1 \\end{bmatrix}$, $\\mathbf{b} = \\begin{bmatrix} 2 \\\\ -1 \\\\ 1 \\end{bmatrix}$\n\n![](https://d3c33hcgiwev3.cloudfront.net/imageassetproxy.v1/abc123_diagram.png)",
+    "question": "Are the following vectors linearly independent?\n\n$\\mathbf{a} = \\begin{bmatrix} 1 \\\\ 0 \\\\ 1 \\end{bmatrix}$, $\\mathbf{b} = \\begin{bmatrix} 2 \\\\ -1 \\\\ 1 \\end{bmatrix}$\n\n![diagram.png](https://d3c33hcgiwev3.cloudfront.net/imageassetproxy.v1/abc123_9f8e7d1a2b3c4e5f6a7b8c9d0e1f2a3b_diagram.png)",
     "options": [
       "Yes",
       "No"
@@ -238,15 +238,15 @@ A code question carries the code of its answer box as its own fields, with the l
 ]
 ```
 
-`code` is the code in the answer box of that question. When an editor is taller than the text it holds, only the part it shows can be read, and the question then carries `"codeWindow": true` to say that the code is a window rather than the whole file. `answer` holds what you have typed into a text, numeric or essay box so far, and is left out while the box is empty. `note` is left out as well unless something about the question could not be read, and it says what is missing in one line. A question whose choices are drawn by the course widget keeps the type the frame reports, most often `single_answer`; it stays `widget` with no options only when that frame did not answer, and the note is what says so.
+`code` is the code in the answer box of that question. When an editor is taller than the text it holds, only the part it shows can be read, and the question then carries `"codeWindow": true` to say that the code is a window rather than the whole file. `answer` holds what you have put into the question so far: the text of a text, numeric or essay box, or the text of the choices you have already picked in a question whose choices are drawn by the course widget, one per line. It is left out while nothing is typed and nothing is picked. `note` is left out as well unless something about the question could not be read, and it says what is missing in one line. A question whose choices are drawn by the course widget keeps the type the frame reports, most often `single_answer`; it stays `widget` with no options only when that frame did not answer, and the note is what says so.
 
-The image address belongs to Coursera's content delivery network, which serves the file only to a signed-in session, so opening a copied link works in a browser that is logged in to the course.
+The image address belongs to Coursera's content delivery network, which serves the file only to a signed-in session, so opening a copied link works in a browser that is logged in to the course. The same address carries a signature that stops working about a day after the page was opened, so a copied link is a short-lived one and the figure itself is never part of the copy.
 
 ## How It Compares
 
 While this project was built, nine public Coursera extensions were reviewed from their source, their README files and saved pages. Four had fully readable source, three were partial, deobfuscated or obfuscated bundles, and two were incomplete snapshots. Obfuscated code was read statically or not at all, never executed. The table below describes the patterns that appeared across that set, not any single product.
 
-| Area | What the reviewed extensions typically do | Coursera Helper 2.0 |
+| Area | What the reviewed extensions typically do | Coursera Helper |
 | :--- | :--- | :--- |
 | **Primary purpose** | Solve quizzes with a third-party model, or mark videos in bulk. | Copy questions for study, and complete the ungraded course items with verified writes. |
 | **Question copying** | Text is pulled out for an AI prompt; maths, code, tables and figures are often flattened or lost. | LaTeX source, fenced code with its language, image links, tables, link labels and typed answers are kept. |
@@ -280,11 +280,12 @@ What this extension does not do:
 | Permission or host | Why it is needed |
 | :--- | :--- |
 | `storage` | Remembers the panel settings and which cards or sections are folded. It never stores account data, answers or course content. |
-| Session storage | One number: the tab the panel last read a Coursera page from, so an extension reload can tell that tab apart from a tab that never was a Coursera page. Chrome clears it when the browser closes. |
+| Session storage | Two values under one key: the number of the tab the panel last read a Coursera page from and the time of that read, so an extension reload can tell that tab apart from a tab that never was a Coursera page. A record older than six hours is ignored, and Chrome clears it when the browser closes. |
 | `clipboardWrite` | Writes the copy when you press the button or Auto copy runs. |
 | `sidePanel` | Opens the interface in Chrome's side panel. |
 | `https://*.coursera.org/*` | Reads the page you are on and calls Coursera's own API with your signed-in session. |
 | `https://d10o6em2qtnr4q.cloudfront.net/assets/*/index.html` | Reads the choices the quiz widget frame has already drawn. No message is sent to it. |
+| Profile photo hosts | No permission asks for these. The panel points one image tag at the photo address the page already holds, on `lh3` to `lh6.googleusercontent.com`, `ctfassets.net`, `coursera-profile-photos.s3.<region>.amazonaws.com` or a Coursera host, and nothing is sent to any of them. An address outside that list is not displayed. |
 
 - The account name, email and photo are read from the page and kept in the panel's memory only. They are never written to storage, never logged and never sent anywhere.
 - The copy is written to the clipboard on your machine. It contains the questions and what you typed, so treat the clipboard as course content.

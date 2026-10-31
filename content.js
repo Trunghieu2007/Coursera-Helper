@@ -18,6 +18,18 @@ const ANSWER_FIELDS = 'textarea:not(.inputarea), input[type="text"], input[type=
 // or a page header holds inputs of its own, and the box in it is a filter, not the student's work
 const ANSWER_CHROME = '[role="toolbar"], header, nav, [data-testid*="toolbar"]';
 
+// what the code widget says about itself rather than about the question: its own Run and Reset
+// buttons, whose words come from the interface language, and the inline notice that explains the
+// editor keys. Neither is course content, and the buttons sit inside the question block, so a copy
+// without this rule reads "RunReset" between the two code blocks
+const WIDGET_FURNITURE = '.cml-code-evaluator button, [class*="cds-localNotification"]';
+
+// the second part of a Coursera asset address, and the longest uploaded name worth copying. The
+// name is only read back out of an address that holds this hash, so it is the mark that says the
+// address is one of Coursera's own assets rather than some file the page happens to point at
+const ASSET_HASH = /^[a-f0-9]{32}$/;
+const MAX_ASSET_NAME = 60;
+
 // panels Coursera keeps on the page for an automated reader: they are addressed to an assistant
 // rather than to the student, and a button next to them asks that assistant to click it. Neither
 // is ever copied and neither is ever touched, whatever the text inside them says. The selector
@@ -176,6 +188,7 @@ function collectText(node) {
     if (tag === "style" || tag === "noscript") return "";
     if (tag === "script") return mathScript(node);
     if (testId === "visually-hidden") return "";
+    if (node.matches && node.matches(WIDGET_FURNITURE)) return "";
     if (tag === "img") return imageText(node);
 
     const formula = mathSource(node);
@@ -373,6 +386,29 @@ function isTypesetMath(node) {
     return false;
 }
 
+// Coursera draws a question figure with no alt text at all, so four picture options would copy as
+// four identical markdown lines and nothing would say which is which. Coursera's own asset address
+// ends with the file the author uploaded, in the form <asset id>_<32 hex content hash>_<uploaded
+// name>, and the uploaded name may itself hold underscores, so everything after the hash is kept.
+// The hash is what proves the address is one of those assets: a picture addressed any other way,
+// the page's own file included, keeps no label rather than being named after something unrelated.
+// The name that is left has to begin with an ordinary character, so an asset whose own file name
+// was stripped by the server does not hand back a bare extension
+function assetFileName(address) {
+    let name = "";
+    try {
+        const path = new URL(address, window.location.href).pathname;
+        name = decodeURIComponent(path.slice(path.lastIndexOf("/") + 1));
+    } catch {
+        return "";
+    }
+    const parts = name.split("_");
+    if (parts.length < 3 || !ASSET_HASH.test(parts[1])) return "";
+    name = parts.slice(2).join("_");
+    if (!/^[A-Za-z0-9]/.test(name) || name.length > MAX_ASSET_NAME) return "";
+    return name;
+}
+
 // markdown picture with the real URL, so a diagram survives the paste. The source is resolved
 // against the page because a saved page keeps relative addresses, and only a web address is
 // written as a picture: a data: source is described instead and any other scheme is not a
@@ -380,10 +416,12 @@ function isTypesetMath(node) {
 function imageText(node) {
     const alt = (node.getAttribute("alt") || "").trim();
     const src = node.currentSrc || node.src || "";
-    const label = markdownLabel(alt);
+    const address = src ? markdownUrl(src) : "";
+    // only a real web address has a file name worth reading back out of it; an embedded picture
+    // carries its bytes in the address, so its own text must never be mistaken for a name
+    const label = markdownLabel(alt || (address ? assetFileName(src) : ""));
     if (!src) return label ? "[image: " + label + "]" : "";
     if (/^data:/i.test(src)) return "[embedded image" + (label ? ": " + label : "") + "]";
-    const address = markdownUrl(src);
     if (!address) return label ? "[image: " + label + "]" : "";
     return "![" + label + "](" + address + ")";
 }
