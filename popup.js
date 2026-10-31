@@ -48,6 +48,10 @@ const STRINGS = {
     noticeTitle: "Just installed or updated?",
     noticeHint: "Reload the Coursera page and this extension once so the panel can read your account and progress.",
     noticeClose: "Dismiss",
+    staleTitle: "This tab still runs the old page script",
+    staleHint: "The dashboard reads its values from the page, and this tab no longer answers. Reloading the tab brings them back. Anything typed into the page is lost when it reloads.",
+    staleReload: "Reload this tab",
+    staleWaiting: "Waiting for the tab…",
     lessonTypes: "Lesson types",
     overviewTitle: "Learning progress",
     learningLabel: "In progress",
@@ -214,6 +218,10 @@ const STRINGS = {
     noticeTitle: "Mới cài hoặc vừa cập nhật?",
     noticeHint: "Hãy tải lại trang Coursera và tiện ích một lần để Bảng tin đọc được tài khoản và tiến độ.",
     noticeClose: "Đóng",
+    staleTitle: "Tab này vẫn đang chạy script trang cũ",
+    staleHint: "Bảng tin đọc số liệu từ chính trang, và tab này không còn trả lời. Tải lại tab sẽ lấy lại số liệu. Nội dung bạn đang gõ trong trang sẽ mất khi tải lại.",
+    staleReload: "Tải lại tab này",
+    staleWaiting: "Đang chờ tab…",
     lessonTypes: "Loại bài học",
     overviewTitle: "Tiến độ học tập",
     learningLabel: "Đang học",
@@ -351,6 +359,8 @@ const GLYPH_SVGS = {
 const elements = {
   reloadNotice: document.getElementById("reloadNotice"),
   noticeClose: document.getElementById("noticeClose"),
+  staleNotice: document.getElementById("staleNotice"),
+  staleReload: document.getElementById("staleReload"),
   accountCard: document.getElementById("accountCard"),
   accountZoom: document.getElementById("accountZoom"),
   accountBody: document.getElementById("accountBody"),
@@ -440,6 +450,19 @@ let courseView = { state: "none", percent: 0, done: 0, total: 0, name: "", types
 let lastAccount = null;
 let lastLearning = null;
 let lastCourse = null;
+// the tab the panel is reading and whether that page has finished loading
+let activeTabId = 0;
+let activeTabReady = false;
+// the tab whose Coursera page the panel did read, in numbers only. Chrome wipes the panel when
+// the extension reloads and leaves the page script of an open tab behind, so this one number is
+// what tells an orphaned script apart from a tab that was never a Coursera page. It lives in
+// session storage: no page value, no URL, and it is gone when the browser closes
+let readTabId = 0;
+const READ_TAB_AGE = 6 * 60 * 60 * 1000;
+// the tab this notice is about, and the reload the panel asked for on it
+let orphanTabId = 0;
+let orphanWaiting = false;
+let orphanTimer = 0;
 const COURSE_TYPE_LIMIT = 60;
 let videoPolling = false;
 let readingPolling = false;
@@ -698,6 +721,7 @@ function applyLanguage() {
   renderLearning();
   renderCourse();
   renderCollapse();
+  renderStaleNotice();
 }
 
 // save the settings
@@ -774,8 +798,8 @@ async function initialize() {
 
   applyTheme();
   applyLanguage();
-  loadAccount();
-  loadOverview();
+  readTabId = await loadRememberedTab();
+  refreshDashboard();
   resumeActiveRun();
 }
 
@@ -795,11 +819,15 @@ function sendToTab(tabId, message) {
 // send a message to the content script of the active tab
 function sendToActiveTab(message) {
   return new Promise((resolve, reject) => {
+    activeTabId = 0;
+    activeTabReady = false;
     chrome.tabs.query({ active: true, currentWindow: true }, ([tab]) => {
       if (!tab || !tab.id) {
         reject(new Error("No active tab."));
         return;
       }
+      activeTabId = tab.id;
+      activeTabReady = tab.status === "complete";
       sendToTab(tab.id, message).then(resolve, reject);
     });
   });
@@ -910,6 +938,7 @@ async function loadAccount() {
   renderAccount();
   try {
     const answer = await sendToActiveTab({ action: "accountInfo" });
+    noteReadAnswer();
     const name = answer && typeof answer.name === "string" ? answer.name.slice(0, 80) : "";
     const email = answer && typeof answer.email === "string" ? answer.email.slice(0, 120) : "";
     const photo = answer && /^https:\/\//i.test(String(answer.photo || "")) ? String(answer.photo).slice(0, 500) : "";
@@ -921,6 +950,7 @@ async function loadAccount() {
     }
   } catch {
     accountView = staleAccount("offpage");
+    noteOrphanRead();
   }
   renderAccount();
 }
@@ -1091,7 +1121,9 @@ async function loadOverview() {
   renderLearning();
   renderCourse();
   try {
-    const views = readOverviewAnswer(await sendToActiveTab({ action: "overviewInfo" }));
+    const answer = await sendToActiveTab({ action: "overviewInfo" });
+    noteReadAnswer();
+    const views = readOverviewAnswer(answer);
     if (views.learning.ok) {
       lastLearning = { percent: views.learning.percent, count: views.learning.count };
       learningView = { ...lastLearning, state: "synced" };
@@ -1113,6 +1145,7 @@ async function loadOverview() {
   } catch {
     learningView = staleLearning();
     courseView = staleCourse();
+    noteOrphanRead();
   }
   renderLearning();
   renderCourse();
@@ -1155,6 +1188,95 @@ chrome.tabs.onActivated.addListener(() => scheduleInfoRefresh());
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
   if (!tab || !tab.active) return;
   if (changeInfo.status === "complete" || typeof changeInfo.url === "string") scheduleInfoRefresh();
+});
+
+// The panel and the page are only in step while both come from the same load of this extension.
+// Chrome closes the panel when the extension reloads but leaves the page script of a tab that is
+// already open running, and that left-behind script answers nothing, so the dashboard has no way
+// back until the tab itself reloads. A side panel without the tabs permission sees no tab URL, so
+// the one number that separates that tab from a tab which was never a Coursera page is the tab
+// this panel did read before, kept in session storage and dropped when the browser closes
+function rememberReadTab(tabId) {
+  if (!tabId || tabId === readTabId) return;
+  readTabId = tabId;
+  try {
+    chrome.storage.session.set({ readTab: { id: tabId, at: Date.now() } }).catch(() => {});
+  } catch {}
+}
+
+async function loadRememberedTab() {
+  let stored = {};
+  try {
+    stored = await chrome.storage.session.get("readTab") || {};
+  } catch {
+    return 0;
+  }
+  const record = stored.readTab;
+  if (!record || !Number.isInteger(record.id) || !Number.isFinite(record.at)) return 0;
+  return Date.now() - record.at > READ_TAB_AGE ? 0 : record.id;
+}
+
+// a tab that answers is a tab running the current script, so the notice has nothing left to say
+function noteReadAnswer() {
+  rememberReadTab(activeTabId);
+  if (orphanTabId) clearOrphanRead();
+}
+
+// a tab that used to answer and now answers nothing is the orphan a reload leaves behind. The
+// panel says so and offers one button; it never reloads a page on its own
+function noteOrphanRead() {
+  if (!activeTabId || !activeTabReady || orphanWaiting) return;
+  if (activeTabId !== readTabId) return;
+  orphanTabId = activeTabId;
+  renderStaleNotice();
+}
+
+function clearOrphanRead() {
+  clearTimeout(orphanTimer);
+  orphanTimer = 0;
+  orphanTabId = 0;
+  orphanWaiting = false;
+  renderStaleNotice();
+}
+
+function renderStaleNotice() {
+  const text = strings();
+  elements.staleNotice.hidden = orphanTabId === 0;
+  elements.staleReload.textContent = orphanWaiting ? text.staleWaiting : text.staleReload;
+  elements.staleReload.disabled = orphanWaiting;
+}
+
+elements.staleReload.addEventListener("click", () => {
+  const tabId = orphanTabId;
+  if (!tabId || orphanWaiting) return;
+  orphanWaiting = true;
+  renderStaleNotice();
+  chrome.tabs.reload(tabId).then(() => {
+    // a tab that never finishes loading is not a tab this panel keeps waiting on
+    orphanTimer = setTimeout(() => {
+      if (!orphanWaiting) return;
+      orphanWaiting = false;
+      refreshDashboard();
+    }, 8000);
+  }, () => clearOrphanRead());
+});
+
+// the reload asked for by the button is read again as soon as it lands, whether or not the Auto
+// info update switch is on
+chrome.tabs.onUpdated.addListener((tabId, changeInfo) => {
+  if (!orphanWaiting || tabId !== orphanTabId) return;
+  if (changeInfo.status !== "complete") return;
+  clearTimeout(orphanTimer);
+  orphanTimer = 0;
+  orphanWaiting = false;
+  refreshDashboard();
+});
+
+// the offer belongs to one tab: a switch drops it, and a closed tab takes the number with it
+chrome.tabs.onActivated.addListener(() => clearOrphanRead());
+chrome.tabs.onRemoved.addListener((tabId) => {
+  if (tabId === orphanTabId) clearOrphanRead();
+  if (tabId === readTabId) readTabId = 0;
 });
 
 // the content script reports the copy it made on its own, so the dock can show it without a

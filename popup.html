@@ -15,7 +15,7 @@
       <h1 class="title" data-i18n="title">Coursera Helper</h1>
       <p class="subtitle" data-i18n="subtitle">Helps you rush through courses efficiently.</p>
     </div>
-    <span class="badge" id="badge">v2.0</span>
+    <span class="badge" id="badge">v2.1</span>
   </header>
 
   <main class="stack">
@@ -30,6 +30,16 @@
       <button class="notice-close" id="noticeClose" type="button" aria-label="Dismiss">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
       </button>
+    </section>
+    <section class="card notice-card stale-card" id="staleNotice" aria-labelledby="staleTitle" hidden>
+      <span class="notice-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9 2.6 17a2 2 0 0 0 1.7 3h15.4a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/></svg>
+      </span>
+      <div class="notice-text">
+        <strong class="notice-title" id="staleTitle" data-i18n="staleTitle">This tab still runs the old page script</strong>
+        <span class="notice-hint row-hint" data-i18n="staleHint">The dashboard reads its values from the page, and this tab no longer answers. Reloading the tab brings them back. Anything typed into the page is lost when it reloads.</span>
+        <button class="btn" id="staleReload" type="button" data-i18n="staleReload">Reload this tab</button>
+      </div>
     </section>
     <section class="card dash-card" id="accountCard">
       <div class="dash-head">

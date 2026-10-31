@@ -25,10 +25,14 @@ const ANSWER_CHROME = '[role="toolbar"], header, nav, [data-testid*="toolbar"]';
 const AI_FACING_SELECTOR = '[data-ai-instructions], [data-testid="content-integrity-instructions"],'
     + ' [data-testid="acknowledgment-checkpoint"], [data-assessment-checkpoint]';
 
-// the hosts a profile photo may come from: Coursera itself and the two image networks its
-// pages serve photos from. A page can point this value anywhere, so a photo from another host
-// is dropped and the panel falls back to the initials
+// the hosts a profile photo may come from. A page can point this value anywhere, so a photo
+// from another host is dropped and the panel falls back to the initials. Coursera serves the
+// photos of accounts signed in with Google from Google's own image proxy, so that host is
+// allowed by its exact numbered forms (lh3 through lh6.googleusercontent.com) rather than by
+// the whole googleusercontent.com domain, which also serves files unrelated to a profile
 const ACCOUNT_PHOTO_HOSTS = ["coursera.org", "cloudfront.net", "ctfassets.net"];
+const ACCOUNT_PHOTO_EXACT_HOSTS = ["lh3.googleusercontent.com", "lh4.googleusercontent.com",
+    "lh5.googleusercontent.com", "lh6.googleusercontent.com"];
 
 // some Coursera questions render their choices inside a frame of Coursera's own widget host, so
 // the parent page holds the question text and nothing else. The file is loaded into that frame
@@ -874,11 +878,13 @@ function accountEmail(value) {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(text) ? text : "";
 }
 
-// a host is allowed when it is one of the photo hosts or a subdomain of one. The bucket
-// Coursera itself serves profile photos from is allowed in its plain and regional forms.
+// a host is allowed when it is one of the photo hosts or a subdomain of one, or when it is one
+// of the exact Google image hosts. The bucket Coursera itself serves profile photos from is
+// allowed in its plain and regional forms.
 function accountPhotoHost(host) {
     const name = String(host || "").toLowerCase();
     if (name.indexOf("coursera-profile-photos.s3.") === 0 && name.endsWith(".amazonaws.com")) return true;
+    if (ACCOUNT_PHOTO_EXACT_HOSTS.indexOf(name) >= 0) return true;
     return ACCOUNT_PHOTO_HOSTS.some((suffix) => name === suffix || name.endsWith("." + suffix));
 }
 
