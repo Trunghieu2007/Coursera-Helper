@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="popup.css">
+  <title>Coursera Helper</title>
+</head>
+<body>
+  <header class="header">
+    <span class="brand-mark" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round"><path d="M17.05 15.94A6.4 6.4 0 1 1 17.05 8.06"/></svg>
+    </span>
+    <div class="header-text">
+      <h1 class="title" data-i18n="title">Coursera Helper</h1>
+      <p class="subtitle" data-i18n="subtitle">Helps you rush through courses efficiently.</p>
+    </div>
+    <span class="badge" id="badge">v2.0</span>
+  </header>
+
+  <main class="stack">
+    <section class="card notice-card" id="reloadNotice" aria-labelledby="reloadNoticeTitle">
+      <span class="notice-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>
+      </span>
+      <div class="notice-text">
+        <strong class="notice-title" id="reloadNoticeTitle" data-i18n="noticeTitle">Just installed or updated?</strong>
+        <span class="notice-hint row-hint" data-i18n="noticeHint">Reload the Coursera page and this extension once so the panel can read your account and progress.</span>
+      </div>
+      <button class="notice-close" id="noticeClose" type="button" aria-label="Dismiss">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+      </button>
+    </section>
+    <section class="card dash-card" id="accountCard">
+      <div class="dash-head">
+        <button class="zoom" id="accountZoom" type="button" aria-expanded="true" aria-controls="accountBody">
+          <svg class="zoom-in" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+          <svg class="zoom-out" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/></svg>
+        </button>
+        <h2 class="dash-title" data-i18n="userInformation">User information</h2>
+        <span class="sync-pill" id="accountSync" data-state="none">No data</span>
+      </div>
+      <div class="dash-body" id="accountBody">
+        <div class="account-row">
+          <span class="avatar" aria-hidden="true">
+            <img id="accountPhoto" alt="" referrerpolicy="no-referrer" hidden>
+            <span class="avatar-fallback" id="accountFallback">
+              <svg class="account-glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            </span>
+          </span>
+          <span class="account-text">
+            <strong class="account-name" id="accountName"></strong>
+            <span class="account-email" id="accountEmail" hidden></span>
+          </span>
+        </div>
+        <p class="row-hint" id="accountMessage" hidden></p>
+      </div>
+    </section>
+
+    <section class="card dash-card" id="learningCard">
+      <div class="dash-head">
+        <button class="zoom" id="learningZoom" type="button" aria-expanded="true" aria-controls="learningBody">
+          <svg class="zoom-in" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+          <svg class="zoom-out" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/></svg>
+        </button>
+        <h2 class="dash-title" data-i18n="overviewTitle">Learning progress</h2>
+        <span class="sync-pill" id="learningSync" data-state="none">No data</span>
+      </div>
+      <div class="dash-body" id="learningBody">
+        <div class="dash-score">
+          <p class="overview-name" id="learningName" data-i18n="learningLabel" hidden>In progress</p>
+          <span class="dash-percent" id="learningPercent">N/A</span>
+        </div>
+        <div class="progress" id="learningBar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+          <span class="progress-fill" id="learningFill"></span>
+        </div>
+        <p class="row-hint dash-caption" id="learningCaption"></p>
+      </div>
+    </section>
+
+    <section class="card dash-card" id="courseCard">
+      <div class="dash-head">
+        <button class="zoom" id="courseZoom" type="button" aria-expanded="true" aria-controls="courseBody">
+          <svg class="zoom-in" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+          <svg class="zoom-out" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/></svg>
+        </button>
+        <h2 class="dash-title" data-i18n="courseProgressTitle">Course progress</h2>
+        <span class="sync-pill" id="courseSync" data-state="none">No data</span>
+      </div>
+      <div class="dash-body" id="courseBody">
+        <div class="dash-score">
+          <p class="overview-name" id="courseName" hidden></p>
+          <span class="dash-percent" id="coursePercent">N/A</span>
+        </div>
+        <div class="progress" id="courseBar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+          <span class="progress-fill" id="courseFill"></span>
+        </div>
+        <p class="row-hint dash-caption" id="courseCaption"></p>
+        <button class="types-toggle" id="typesToggle" type="button" aria-expanded="true" aria-controls="overviewTypes" hidden>
+          <span data-i18n="lessonTypes">Lesson types</span>
+          <span class="types-box" aria-hidden="true">
+            <svg class="types-plus" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M6 1.5v9M1.5 6h9"/></svg>
+            <svg class="types-minus" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M1.5 6h9"/></svg>
+          </span>
+        </button>
+        <div class="overview-types" id="overviewTypes" hidden></div>
+      </div>
+    </section>
+
+    <section class="card actions-card" aria-labelledby="quickActionsTitle">
+      <div class="section-head">
+        <button class="zoom" id="quickActionsZoom" type="button" aria-expanded="true" aria-controls="quickActionsBody">
+          <svg class="zoom-in" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+          <svg class="zoom-out" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/></svg>
+        </button>
+        <h2 class="eyebrow" id="quickActionsTitle" data-i18n="quickActions">Quick actions</h2>
+      </div>
+      <div class="action-list" id="quickActionsBody">
+        <button id="copyNow" class="btn soft" type="button" data-i18n="copyButton">Copy all questions to send AI models</button>
+        <button id="skipEverythingInstant" class="btn soft" type="button" data-i18n="skipAllInstantButton">Skip all courses instantly</button>
+        <button id="skipEverything" class="btn soft" type="button" data-i18n="skipAllButton">Skip all courses step by step (recommended)</button>
+      </div>
+    </section>
+
+    <section class="card tools-card" aria-labelledby="skipModulesTitle">
+      <div class="section-head">
+        <button class="zoom" id="skipModulesZoom" type="button" aria-expanded="true" aria-controls="skipModules">
+          <svg class="zoom-in" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+          <svg class="zoom-out" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/></svg>
+        </button>
+        <h2 class="eyebrow" id="skipModulesTitle" data-i18n="courseTools">Standalone skip modules</h2>
+      </div>
+      <div class="action-list" id="skipModules">
+        <button id="completeVideos" class="btn soft" type="button" data-i18n="completeVideosButton">Skip lecture videos</button>
+        <button id="completeReadings" class="btn soft" type="button" data-i18n="completeReadingsButton">Skip readings</button>
+        <button id="completeDiscussions" class="btn soft" type="button" data-i18n="completeDiscussionsButton">Skip discussions</button>
+        <button id="completePlugins" class="btn soft" type="button" data-i18n="completePluginsButton">Skip practice items</button>
+        <button id="completeLabs" class="btn soft" type="button" data-i18n="completeLabsButton">Skip labs</button>
+        <button id="completeLti" class="btn soft" type="button" data-i18n="completeLtiButton">Skip ungraded labs</button>
+        <button id="checkGraded" class="btn soft" type="button" data-i18n="checkGradedButton">Check graded apps</button>
+      </div>
+    </section>
+
+    <section class="card preferences-card" aria-labelledby="settingsTitle">
+      <div class="section-head">
+        <button class="zoom" id="settingsZoom" type="button" aria-expanded="true" aria-controls="settingsBody">
+          <svg class="zoom-in" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+          <svg class="zoom-out" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/></svg>
+        </button>
+        <h2 class="eyebrow" id="settingsTitle" data-i18n="generalSettings">General settings</h2>
+      </div>
+      <div class="settings-body" id="settingsBody">
+        <label class="row" for="autoCopy">
+          <span class="row-text">
+            <strong data-i18n="autoCopy">Auto copy</strong>
+            <span class="row-hint" data-i18n="autoCopyHint">Copy questions when a lesson page opens.</span>
+          </span>
+          <span class="switch">
+            <input type="checkbox" id="autoCopy">
+            <span class="track" aria-hidden="true"></span>
+          </span>
+        </label>
+        <label class="row" for="autoReload">
+          <span class="row-text">
+            <strong data-i18n="autoReload">Auto reload after skip</strong>
+            <span class="row-hint" data-i18n="autoReloadHint">Reload the page when a skip run finishes.</span>
+          </span>
+          <span class="switch">
+            <input type="checkbox" id="autoReload">
+            <span class="track" aria-hidden="true"></span>
+          </span>
+        </label>
+        <label class="row" for="autoInfoUpdate">
+          <span class="row-text">
+            <strong data-i18n="autoInfoUpdate">Auto info update</strong>
+            <span class="row-hint" data-i18n="autoInfoUpdateHint">Refresh the dashboard when you open or switch Coursera pages.</span>
+          </span>
+          <span class="switch">
+            <input type="checkbox" id="autoInfoUpdate">
+            <span class="track" aria-hidden="true"></span>
+          </span>
+        </label>
+        <div class="field">
+          <span class="field-label" data-i18n="requestMode">Skip mode for standalone modules</span>
+          <div class="segmented" id="requestModePicker" role="radiogroup"></div>
+          <p class="row-hint settings-hint" data-i18n="requestModeHint">Applies to the standalone skip modules only. Step by step waits between items; Instant does not.</p>
+        </div>
+        <div class="field">
+          <span class="field-label" data-i18n="language">Language</span>
+          <div class="segmented" id="languagePicker" role="radiogroup"></div>
+        </div>
+        <div class="field">
+          <span class="field-label" data-i18n="appearance">Appearance</span>
+          <div class="segmented" id="themePicker" role="radiogroup"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card credit-card" aria-label="Credits">
+      <p class="credit-line">
+        <span data-i18n="creditMade">Made with love by Litterium</span>
+        <svg class="credit-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
+      </p>
+      <p class="credit-line">
+        <span data-i18n="creditStarLead">Please</span>
+        <svg class="credit-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="m12 3.2 2.6 5.4 5.9.9-4.3 4.1 1 5.9-5.2-2.8-5.2 2.8 1-5.9L3.5 9.5l5.9-.9Z"/></svg>
+        <span data-i18n="creditStarTail">my repo if you find it useful</span>
+      </p>
+      <p class="credit-line credit-greeting" data-i18n="creditGreeting">Study well!</p>
+    </section>
+  </main>
+
+  <footer class="status-dock">
+    <p id="status" class="status" role="status" aria-live="polite"></p>
+  </footer>
+
+  <script src="popup.js"></script>
+</body>
+</html>
