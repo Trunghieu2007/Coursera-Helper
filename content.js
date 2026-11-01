@@ -1,5 +1,11 @@
 const WAIT_LIMIT = 8000;
 const WAIT_STEP = 250;
+// how long an auto copy waits after a page opens before it reads the page. Coursera paints a quiz
+// question by question and the widget frame answers after its own start-up, so a copy that starts
+// too early can catch a block before its choices exist. The panel offers whole seconds, 1 to 5
+const MIN_COPY_DELAY = 1;
+const MAX_COPY_DELAY = 5;
+const DEFAULT_COPY_DELAY = 3;
 const CODE_FENCE = "```";
 const BLOCK_TAGS = ["p", "div", "li", "ul", "ol", "figure", "table", "tr", "td", "th", "h1", "h2", "h3", "h4", "h5", "h6", "blockquote", "pre", "section"];
 
@@ -95,12 +101,22 @@ const DECLARED_TYPES = {
 };
 
 let lastAutoCopyUrl = "";
-let settings = { autoCopy: false };
+let pendingAutoCopyUrl = "";
+let settings = { autoCopy: false, autoCopyDelay: DEFAULT_COPY_DELAY };
 
-// read the saved setting once per page and keep it in memory
+// the wait before an auto copy, in whole seconds of the range the panel offers. The delay is a
+// stored value like any other, so a number outside the five choices - or one that is not a
+// number at all - becomes the default again rather than an arbitrary timer
+function copyDelay(value) {
+    const seconds = Math.round(Number(value));
+    if (!Number.isFinite(seconds) || seconds < MIN_COPY_DELAY || seconds > MAX_COPY_DELAY) return DEFAULT_COPY_DELAY;
+    return seconds;
+}
+
+// read the saved settings once per page and keep them in memory
 function loadSettings() {
-    return chrome.storage.local.get(["autoCopy"]).then((stored) => {
-        settings = { autoCopy: stored.autoCopy === true };
+    return chrome.storage.local.get(["autoCopy", "autoCopyDelay"]).then((stored) => {
+        settings = { autoCopy: stored.autoCopy === true, autoCopyDelay: copyDelay(stored.autoCopyDelay) };
     });
 }
 
@@ -849,18 +865,28 @@ async function copyNow() {
 }
 
 // auto copy, runs once per URL. The panel owns every notice now, so the result travels back
-// to it; a page that shows no question block stays quiet
+// to it; a page that shows no question block stays quiet. The wait runs before the page is read,
+// and the URL is claimed for the whole run, so two navigations to the same page copy once
 async function autoCopy() {
     if (!settings.autoCopy) return;
-    if (lastAutoCopyUrl === window.location.href) return;
+    const url = window.location.href;
+    if (lastAutoCopyUrl === url || pendingAutoCopyUrl === url) return;
 
-    const blocks = await waitForQuestions();
-    if (blocks.length === 0) return;
+    pendingAutoCopyUrl = url;
+    try {
+        await new Promise((resolve) => setTimeout(resolve, settings.autoCopyDelay * 1000));
+        // turning the setting off during the wait cancels the copy it was waiting for
+        if (!settings.autoCopy) return;
+        const blocks = await waitForQuestions();
+        if (blocks.length === 0) return;
 
-    lastAutoCopyUrl = window.location.href;
-    const result = await copyNow();
-    chrome.runtime.sendMessage({ action: "copyStatus", count: result.count, copied: result.copied })
-        .catch(() => {});
+        lastAutoCopyUrl = url;
+        const result = await copyNow();
+        chrome.runtime.sendMessage({ action: "copyStatus", count: result.count, copied: result.copied })
+            .catch(() => {});
+    } finally {
+        if (pendingAutoCopyUrl === url) pendingAutoCopyUrl = "";
+    }
 }
 
 // the start-up state the page writes into an inline script, parsed as the JSON object it is.
@@ -992,6 +1018,7 @@ function startPageSettings() {
     chrome.storage.onChanged.addListener((changes, area) => {
         if (area !== "local") return;
         if (changes.autoCopy) settings.autoCopy = changes.autoCopy.newValue === true;
+        if (changes.autoCopyDelay) settings.autoCopyDelay = copyDelay(changes.autoCopyDelay.newValue);
 
         if (settings.autoCopy && changes.autoCopy && changes.autoCopy.newValue === true) {
             lastAutoCopyUrl = "";
@@ -1008,7 +1035,7 @@ function watchNavigation() {
         currentUrl = window.location.href;
         autoCopy();
     }, 700);
-    window.addEventListener("popstate", () => setTimeout(autoCopy, 400));
+    window.addEventListener("popstate", () => autoCopy());
 }
 
 // the clipboard and the panel channel belong to the Coursera page alone: a frame of the widget

@@ -8,7 +8,7 @@
   </p>
 
   <p>
-    <img src="https://img.shields.io/badge/Version-2.2-1f2937?style=flat-square" alt="Phiên bản 2.2" />
+    <img src="https://img.shields.io/badge/Version-2.3-1f2937?style=flat-square" alt="Phiên bản 2.3" />
     <img src="https://img.shields.io/badge/Manifest-V3-1f2937?style=flat-square" alt="Manifest V3" />
     <img src="https://img.shields.io/badge/Quy%E1%BB%81n-3-1f2937?style=flat-square" alt="Ba quyền" />
     <img src="https://img.shields.io/badge/Storage-Ch%E1%BB%89%20l%C6%B0u%20c%E1%BB%A5c%20b%E1%BB%99-1f2937?style=flat-square" alt="Lưu trữ cục bộ" />
@@ -159,7 +159,8 @@ Ba thẻ của Bảng tin luôn hiện. Mỗi thẻ có một pill trạng thái
 
 | Thiết lập | Mô tả |
 | :--- | :--- |
-| **Tự động sao chép** | Tự động sao chép câu hỏi khi một trang bài học hoặc bài tập được hỗ trợ tải xong. |
+| **Tự động sao chép** | Tự động sao chép câu hỏi khi một trang bài học hoặc bài tập được hỗ trợ tải xong, sau khoảng chờ ở mục dưới. |
+| **Độ trễ tự sao chép** | Thời gian một trang chờ sau khi mở trước khi Tự động sao chép đọc trang, từ 1 đến 5 giây, mặc định 3. Coursera vẽ từng câu hỏi một và widget trả lời sau khi nó khởi động xong, nên chờ lâu hơn giúp các phương án kịp tồn tại trước khi được đọc. Thanh trượt chỉ có tác dụng khi Tự động sao chép đang bật, và tắt công tắc trong lúc chờ sẽ hủy bản sao đang chờ. |
 | **Tự động tải lại sau khi bỏ qua** | Tải lại tab mà lần chạy thuộc về, một lần, sau khi lần chạy được theo dõi kết thúc, kể cả khi mọi bài đều đã hoàn thiện từ trước và không phải ghi gì, để trang hiện trạng thái hoàn tất. Lần chạy còn đang chạy, hoặc tab không phải Coursera, thì được để yên. Mặc định tắt. |
 | **Tự động cập nhật thông tin** | Đọc lại tài khoản và hai thẻ tiến độ khi bạn mở, chuyển tới hoặc tải xong một tab Coursera, và đọc thêm một lần nếu cả hai thẻ vẫn chưa có gì. Chỉ làm mới panel, không bao giờ tải lại tiện ích hay trang. Mặc định bật. |
 | **Chế độ bỏ qua cho các chức năng độc lập** | Chỉ bảy chức năng bỏ qua độc lập theo thiết lập này. Từng bước, mặc định, chờ một chút giữa các bài; Ngay lập tức gửi các yêu cầu cũng tuần tự nhưng không chờ. Cả hai chế độ đều không gửi hai yêu cầu cùng lúc. Hai nút bỏ qua toàn bộ khoá học tự mang nhịp riêng và không đổi thiết lập này. |

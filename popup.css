@@ -1096,6 +1096,104 @@ body {
   margin: -1px 0 1px;
 }
 
+/* one line of a field name and its current value */
+
+.field-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.field-value {
+  flex: 0 0 auto;
+  min-width: 40px;
+  padding: 1px 7px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: var(--surface-secondary);
+  color: var(--text);
+  font-size: 11px;
+  font-weight: 650;
+  line-height: 1.5;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+
+/* delay slider. The control is a native range input, so the arrows, Home, End and Page Up take
+   the five whole seconds without a key handler here, and the value chip mirrors what the field
+   already announces, which is why it is hidden from the accessibility tree */
+
+.slider {
+  --thumb: 8px;
+  --ratio: 0.5;
+  /* the thumb centre keeps half its own width from each end of the track, so the filled part
+     stops under that centre instead of under the raw percentage of the value */
+  --fill: calc(var(--thumb) + var(--ratio) * (100% - var(--thumb) * 2));
+  width: 100%;
+  height: 22px;
+  margin: 0;
+  appearance: none;
+  background: transparent;
+  cursor: pointer;
+}
+
+.slider::-webkit-slider-runnable-track {
+  height: 6px;
+  border: 1px solid var(--track-border);
+  border-radius: 4px;
+  background: linear-gradient(90deg, var(--action) 0 var(--fill), var(--track-bg) var(--fill) 100%);
+}
+
+.slider::-webkit-slider-thumb {
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  margin-top: -6px;
+  border: 1px solid var(--primary-hover);
+  border-radius: 5px;
+  background: #FFFFFF;
+  box-shadow: 0 1px 2px rgba(23, 43, 77, 0.22);
+  transition: border-color 0.16s ease, box-shadow 0.16s ease;
+}
+
+.slider:hover::-webkit-slider-thumb {
+  border-color: var(--primary-strong);
+}
+
+.slider:active::-webkit-slider-thumb {
+  border-color: var(--primary-active);
+  box-shadow: 0 0 0 3px var(--focus-ring);
+}
+
+.slider:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 3px;
+  border-radius: 6px;
+}
+
+[data-theme="dark"] .slider::-webkit-slider-thumb {
+  background: #E2ECFC;
+  border-color: var(--primary-hover);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+}
+
+/* the five stops the arrows move between, drawn under the track and lined up with the places the
+   thumb can actually hold */
+.slider-ticks {
+  display: flex;
+  justify-content: space-between;
+  padding: 0 7px;
+  margin-top: -2px;
+}
+
+.slider-ticks span {
+  width: 2px;
+  height: 4px;
+  border-radius: 1px;
+  background: var(--border-strong);
+}
+
 /* switch */
 
 .switch {

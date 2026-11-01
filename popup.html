@@ -170,6 +170,16 @@
             <span class="track" aria-hidden="true"></span>
           </span>
         </label>
+        <div class="field">
+          <div class="field-top">
+            <label class="field-label" for="autoCopyDelay" data-i18n="autoCopyDelay">Auto copy delay</label>
+            <span class="field-value" id="autoCopyDelayValue" aria-hidden="true">3 s</span>
+          </div>
+          <input type="range" class="slider" id="autoCopyDelay" min="1" max="5" step="1" value="3"
+            aria-describedby="autoCopyDelayHint">
+          <div class="slider-ticks" id="autoCopyDelayTicks" aria-hidden="true"></div>
+          <p class="row-hint settings-hint" id="autoCopyDelayHint" data-i18n="autoCopyDelayHint">Waits this long after a lesson page opens before copying, so the quiz has finished drawing its choices. Used only while Auto copy is on.</p>
+        </div>
         <label class="row" for="autoReload">
           <span class="row-text">
             <strong data-i18n="autoReload">Auto reload after skip</strong>

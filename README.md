@@ -8,7 +8,7 @@
   </p>
 
   <p>
-    <img src="https://img.shields.io/badge/Version-2.2-1f2937?style=flat-square" alt="Version 2.2" />
+    <img src="https://img.shields.io/badge/Version-2.3-1f2937?style=flat-square" alt="Version 2.3" />
     <img src="https://img.shields.io/badge/Manifest-V3-1f2937?style=flat-square" alt="Manifest V3" />
     <img src="https://img.shields.io/badge/Permissions-3-1f2937?style=flat-square" alt="Three permissions" />
     <img src="https://img.shields.io/badge/Storage-Local%20Only-1f2937?style=flat-square" alt="Local Storage" />
@@ -159,7 +159,8 @@ The three dashboard cards are always visible. Each one carries a state pill and 
 
 | Setting | Description |
 | :--- | :--- |
-| **Auto copy** | Automatically copies questions when a supported lesson or assignment page loads. |
+| **Auto copy** | Automatically copies questions when a supported lesson or assignment page loads, after the wait set below. |
+| **Auto copy delay** | How long a page waits after it opens before Auto copy reads it, from 1 to 5 seconds, 3 by default. Coursera draws a quiz question by question and a widget answers after its own start-up, so a longer wait lets the choices exist before they are read. The slider only matters while Auto copy is on, and turning it off during the wait stops the copy that was waiting. |
 | **Auto reload after skip** | Reloads the tab the run belongs to once a followed run finishes, including a run where every item was already complete and nothing had to be written, so the page shows its finished state. A run still in progress, or a tab that is not on Coursera, is left alone. Off by default. |
 | **Auto info update** | Re-reads the account and the two progress cards when you open, switch to or finish loading a Coursera tab, and reads once more if both progress cards still have nothing. It only refreshes the panel and never reloads the extension or the page. On by default. |
 | **Skip mode for standalone modules** | Only the seven standalone skip modules follow this setting. Step by step, the default, waits a little between items; Instantly sends the same one-at-a-time requests with no pause. Neither mode sends two requests at once. The two skip-all buttons carry their own pacing and do not change this setting. |

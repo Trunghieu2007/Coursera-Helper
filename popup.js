@@ -5,6 +5,10 @@ const STRINGS = {
     subtitle: "Helps you rush through courses efficiently.",
     autoCopy: "Auto copy",
     autoCopyHint: "Copy questions when a lesson page opens.",
+    autoCopyDelay: "Auto copy delay",
+    autoCopyDelayHint: "Waits this long after a lesson page opens before copying, so the quiz has finished drawing its choices. Used only while Auto copy is on.",
+    delayUnit: "s",
+    delaySpoken: "seconds",
     autoReload: "Auto reload after skip",
     autoReloadHint: "Reload the page when a skip run finishes.",
     autoInfoUpdate: "Auto info update",
@@ -175,6 +179,10 @@ const STRINGS = {
     subtitle: "Giúp bạn hoàn thành khoá học nhanh gọn.",
     autoCopy: "Tự động sao chép",
     autoCopyHint: "Sao chép câu hỏi ngay khi mở trang bài tập.",
+    autoCopyDelay: "Độ trễ tự sao chép",
+    autoCopyDelayHint: "Chờ chừng này sau khi mở trang bài tập mới sao chép, để bài kiểm tra kịp vẽ xong phương án. Chỉ dùng khi Tự động sao chép đang bật.",
+    delayUnit: "giây",
+    delaySpoken: "giây",
     autoReload: "Tự động tải lại sau khi bỏ qua",
     autoReloadHint: "Tải lại trang khi lượt bỏ qua kết thúc.",
     autoInfoUpdate: "Tự động cập nhật thông tin",
@@ -391,6 +399,9 @@ const elements = {
   typesToggle: document.getElementById("typesToggle"),
   overviewTypes: document.getElementById("overviewTypes"),
   autoCopy: document.getElementById("autoCopy"),
+  autoCopyDelay: document.getElementById("autoCopyDelay"),
+  autoCopyDelayValue: document.getElementById("autoCopyDelayValue"),
+  autoCopyDelayTicks: document.getElementById("autoCopyDelayTicks"),
   autoReload: document.getElementById("autoReload"),
   autoInfoUpdate: document.getElementById("autoInfoUpdate"),
   languagePicker: document.getElementById("languagePicker"),
@@ -432,8 +443,23 @@ const SECTION_VIEWS = [
 
 const SYNC_LABELS = { none: "noData", stale: "notSynced", syncing: "syncing", synced: "synced" };
 
+const COPY_DELAY_MIN = 1;
+const COPY_DELAY_MAX = 5;
+const COPY_DELAY_DEFAULT = 3;
+
+// the same range the content script accepts, so a hand-edited storage key cannot leave the
+// slider showing a number the page will never use
+function copyDelaySetting(value) {
+  const seconds = Math.round(Number(value));
+  if (!Number.isFinite(seconds) || seconds < COPY_DELAY_MIN || seconds > COPY_DELAY_MAX) {
+    return COPY_DELAY_DEFAULT;
+  }
+  return seconds;
+}
+
 let settings = {
   autoCopy: false,
+  autoCopyDelay: COPY_DELAY_DEFAULT,
   language: "en",
   theme: "system",
   requestMode: "sequential",
@@ -712,6 +738,7 @@ function applyLanguage() {
     if (typeof value === "string") node.textContent = value;
   });
   elements.autoCopy.setAttribute("aria-label", text.autoCopy);
+  elements.autoCopyDelay.setAttribute("aria-label", text.autoCopyDelay);
   elements.autoReload.setAttribute("aria-label", text.autoReload);
   elements.autoInfoUpdate.setAttribute("aria-label", text.autoInfoUpdate);
   elements.noticeClose.setAttribute("aria-label", text.noticeClose);
@@ -721,12 +748,32 @@ function applyLanguage() {
   renderLearning();
   renderCourse();
   renderCollapse();
+  renderCopyDelay();
   renderStaleNotice();
 }
 
 // save the settings
 async function saveSettings() {
   await chrome.storage.local.set(settings);
+}
+
+// one tick per choice, so the five stops read as a set of options rather than a continuous scale
+function buildDelayTicks() {
+  elements.autoCopyDelayTicks.textContent = "";
+  for (let seconds = COPY_DELAY_MIN; seconds <= COPY_DELAY_MAX; seconds++) {
+    elements.autoCopyDelayTicks.appendChild(document.createElement("span"));
+  }
+}
+
+// the chip and the filled part of the track follow the thumb while it moves, and the text
+// alternative is what a screen reader reads back instead of the bare number
+function renderCopyDelay() {
+  const text = strings();
+  const seconds = copyDelaySetting(elements.autoCopyDelay.value);
+  const ratio = (seconds - COPY_DELAY_MIN) / (COPY_DELAY_MAX - COPY_DELAY_MIN);
+  elements.autoCopyDelay.style.setProperty("--ratio", String(ratio));
+  elements.autoCopyDelayValue.textContent = seconds + " " + text.delayUnit;
+  elements.autoCopyDelay.setAttribute("aria-valuetext", seconds + " " + text.delaySpoken);
 }
 
 // read the settings and build the three segmented controls when the panel opens
@@ -736,7 +783,7 @@ async function initialize() {
   let stored = {};
   try {
     stored = await chrome.storage.local.get([
-      "autoCopy", "language", "theme", "requestMode", "autoReload", "autoInfoUpdate",
+      "autoCopy", "autoCopyDelay", "language", "theme", "requestMode", "autoReload", "autoInfoUpdate",
       "collapsedCards", "collapsedSections", "noticeHidden"
     ]) || {};
   } catch {}
@@ -746,6 +793,7 @@ async function initialize() {
     ? stored.collapsedSections : {};
   settings = {
     autoCopy: stored.autoCopy === true,
+    autoCopyDelay: copyDelaySetting(stored.autoCopyDelay),
     // a stored key the table inherited instead of defining ("__proto__") is not a language
     language: Object.hasOwn(STRINGS, stored.language) ? stored.language : "en",
     theme: ["system", "light", "dark"].includes(stored.theme) ? stored.theme : "system",
@@ -766,6 +814,9 @@ async function initialize() {
     }
   };
   elements.autoCopy.checked = settings.autoCopy;
+  buildDelayTicks();
+  elements.autoCopyDelay.value = settings.autoCopyDelay;
+  renderCopyDelay();
   elements.autoReload.checked = settings.autoReload;
   elements.autoInfoUpdate.checked = settings.autoInfoUpdate;
   elements.reloadNotice.hidden = settings.noticeHidden;
@@ -1787,6 +1838,17 @@ window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", app
 
 elements.autoCopy.addEventListener("change", async () => {
   settings.autoCopy = elements.autoCopy.checked;
+  await saveSettings();
+});
+
+// the readout moves with the thumb and the setting is saved when the control is released,
+// so dragging does not write a storage change at every step
+elements.autoCopyDelay.addEventListener("input", renderCopyDelay);
+
+elements.autoCopyDelay.addEventListener("change", async () => {
+  settings.autoCopyDelay = copyDelaySetting(elements.autoCopyDelay.value);
+  elements.autoCopyDelay.value = settings.autoCopyDelay;
+  renderCopyDelay();
   await saveSettings();
 });
 
